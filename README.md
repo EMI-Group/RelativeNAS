@@ -5,7 +5,7 @@ Raw code accompanying the paper
 > _arXiv:1806.09055_.
 
 <p align="center">
-  <img src="./img/paired_learning.png" alt="paired_learning" width="48%">
+  <img src="./img/paired_learning.png" alt="paired_learning" width="95%">
 </p>
 
 ## Requirements
