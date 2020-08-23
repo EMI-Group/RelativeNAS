@@ -45,7 +45,7 @@ The easist way to get started is to evaluate our pretrained models.
 
 
 ## Architecture evaluation (using full-sized models)
-To evaluate our best cells by training from scratch, run
+To evaluate our architecture by training from scratch, run
 ```
 python train.py --auxiliary --cutout --set cifar10
 ```
