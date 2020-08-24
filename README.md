@@ -66,7 +66,7 @@ Customized architectures are supported through the `--arch` flag once specified 
 **ImageNet**
 Train the searched model over ImageNet dataset with the following script.<br>
 ```
-python train_imagenet --data_path 'The path of ImageNet lmdb data' --init_channels 46 --layers 14 --arch PairNAS --gpus 0,1,2,3
+python train_imagenet.py --data_path 'The path of ImageNet lmdb data' --init_channels 46 --layers 14 --arch PairNAS --gpus 0,1,2,3
 ```
 
 
