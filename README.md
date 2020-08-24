@@ -37,8 +37,21 @@ The easist way to get started is to evaluate our pretrained models.
 * Expected result: 15.86% test error rate with 3.98M model params.
 
 **ImageNet** ([imagenet.pt](./trained_model/imagenet_model.pt))
+1. We pack the ImageNet data as the lmdb file for faster IO. The lmdb files can be made as follows. 
+
+    1). Generate the list of the image data.<br>
+    ```
+    python dataset/mk_img_list.py --image_path 'the path of your image data' --output_path 'the path to output the list file'
+    ```
+    2). Use the image list obtained above to make the lmdb file.<br>
+    ```
+    python dataset/img2lmdb.py --image_path 'the path of your image data' --list_path 'the path of your image list' --output_path 'the path to output the lmdb file' --split 'split folder (train/val)'
+    ```
+
+2. Download the related files of the pretrained model and put `imagenet_model.pt` into the `./trained_model`
+3. 
 ```
- python test.py --auxiliary --model_path ./trained_model/imagenet_model.pt --set cifar100
+ python validation.py --auxiliary --model_path ./trained_model/imagenet_model.pt --arch PairNAS --gpus 0,1 --data_path 'the path of your image data (lmdb)'
 ```
 * Expected result: 24.88% top-1 error and 7.7% top-5 with 5.05M model params.
 
@@ -50,6 +63,10 @@ To evaluate our architecture by training from scratch, run
 python train.py --auxiliary --cutout --set cifar10
 ```
 Customized architectures are supported through the `--arch` flag once specified in `genotypes.py`.
+
+**ImageNet**
+Train the searched model with the following script by assigning `__C.net_config` with the architecture obtained in the above search process. You can also train your customized model by redefine the variable `model` in `retrain.py`.<br>
+`python -m run_apis.retrain --data_path 'The path of ImageNet data' --load_path 'The path you put the net_config of the model'`
 
 
 ## Citation
