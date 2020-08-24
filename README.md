@@ -13,8 +13,10 @@ The implementation of the paper
 Python >= 3.6, PyTorch >= 1.0, torchvision >= 0.2
 ```
 
-The algorithm is based on continuous encoding in cell-based search space. 
-It is able to efficiently design high-performance convolutional architectures for image classification.
+**PairNAS** is based on continuous encoding in cell-based search space. 
+Besides, it uses a paired learning paradigm to iteratively update the architecture vectors in the population.
+A weight set is also contained to reduce the cost for performance estimations of candidate architectures.
+Therefore, it is able to efficiently design high-performance convolutional architectures for image classification.
 The architecture directly searched on CIFAR-10 can transfer into other intra- and inter-tasks, such as CIFAR-100, ImageNet, and PASCAL VOC 2007 et al.
 The search process only requires a single GPU (1080 Ti) for nine hours.
 
@@ -22,7 +24,7 @@ The search process only requires a single GPU (1080 Ti) for nine hours.
 
 
 ## Pretrained models
-The easist way to get started is to evaluate our pretrained models.
+Our pretrained models are provided for evaluation.
 
 **CIFAR-10** ([cifar10.pt](./trained_model/cifar10_model.pt))
 ```
