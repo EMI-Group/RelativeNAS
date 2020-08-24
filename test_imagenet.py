@@ -10,7 +10,7 @@ import torch.backends.cudnn as cudnn
 import torch.nn as nn
 
 from configs.imagenet_val_cfg import cfg
-from dataset import imagenet_data
+from dataset.imagenet_scripts import imagenet_data
 from tools import utils
 from tools.multadds_count import comp_multadds
 import genotypes

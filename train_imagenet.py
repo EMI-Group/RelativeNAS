@@ -12,7 +12,7 @@ import torch.utils
 import torchvision.datasets as dset
 import torch.backends.cudnn as cudnn
 
-from dataset import imagenet_data
+from dataset.imagenet_scripts import imagenet_data
 from torch.autograd import Variable
 import genotypes
 
@@ -40,7 +40,7 @@ args = parser.parse_args()
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '{}'.format(args.gpus)
 args.save = '../exp_dirs/eval-imagenet-arch{}-l{}-c{}-lr{}'.format(args.arch, args.layers, args.init_channels, config.optim.init_lr)
-utils.create_exp_dir(args.save, scripts_path='./')
+utils.create_exp_dir(args.save)
 
 log_format = '%(asctime)s %(message)s'
 logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=log_format, datefmt='%m/%d %I:%M:%S %p')
