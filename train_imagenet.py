@@ -25,7 +25,7 @@ from tools.utils import count_parameters_in_MB
 from tools.multadds_count import comp_multadds
 
 parser = argparse.ArgumentParser("cifar")
-parser.add_argument('--gpus', type=str, default='0,1,2,3,4,5,6,7')     # '11,12,13,14'
+parser.add_argument('--gpus', type=str, default='0,1,2,3,4,5,6,7')  # '11,12,13,14'
 parser.add_argument('--arch', type=str, default='PairNAS', help='which architecture to use')
 parser.add_argument('--report_freq', type=float, default=50, help='report frequency')
 parser.add_argument('--data_path', type=str, default='/raid/huangsh/imagenet/ILSVRC2012/lmdb')
@@ -39,7 +39,8 @@ parser.add_argument('--seed', type=int, default=0, help='random seed')
 args = parser.parse_args()
 
 os.environ['CUDA_VISIBLE_DEVICES'] = '{}'.format(args.gpus)
-args.save = '../exp_dirs/eval-imagenet-arch{}-l{}-c{}-lr{}'.format(args.arch, args.layers, args.init_channels, config.optim.init_lr)
+args.save = '../exp_dirs/eval-imagenet-arch{}-l{}-c{}-lr{}'.format(args.arch, args.layers, args.init_channels,
+                                                                   config.optim.init_lr)
 utils.create_exp_dir(args.save)
 
 log_format = '%(asctime)s %(message)s'
@@ -106,10 +107,13 @@ def main():
         criterion = nn.CrossEntropyLoss()
     criterion = criterion.cuda()
 
-    optimizer = torch.optim.SGD(model.parameters(), config.optim.init_lr, momentum=config.optim.momentum, weight_decay=config.optim.weight_decay)
+    optimizer = torch.optim.SGD(model.parameters(), config.optim.init_lr, momentum=config.optim.momentum,
+                                weight_decay=config.optim.weight_decay)
 
-    imagenet = imagenet_data.ImageNet12(trainFolder=os.path.join(args.data_path, 'train'), testFolder=os.path.join(args.data_path, 'val'),
-                                        num_workers=config.data.num_workers, type_of_data_augmentation=config.data.type_of_data_aug, data_config=config.data,
+    imagenet = imagenet_data.ImageNet12(trainFolder=os.path.join(args.data_path, 'train'),
+                                        testFolder=os.path.join(args.data_path, 'val'),
+                                        num_workers=config.data.num_workers,
+                                        type_of_data_augmentation=config.data.type_of_data_aug, data_config=config.data,
                                         size_images=config.data.input_size[1], scaled_size=config.data.scaled_size[1])
     train_queue, valid_queue = imagenet.getTrainTestLoader(config.data.batch_size)
 
@@ -123,12 +127,12 @@ def main():
         if config.optim.lr_schedule == 'cosine':
             scheduler.step()
             current_lr = scheduler.get_lr()[0]
-        elif config.optim.lr_schedule == 'linear':       # with warmup initial
+        elif config.optim.lr_schedule == 'linear':  # with warmup initial
             optimizer, current_lr = adjust_lr(optimizer, config.train_params.epochs, lr, epoch)
         else:
             print('Wrong lr type, exit')
             sys.exit(1)
-        if epoch < 5:     # Warmup epochs for 5
+        if epoch < 5:  # Warmup epochs for 5
             current_lr = lr * (epoch + 1) / 5.0
             for param_group in optimizer.param_groups:
                 param_group['lr'] = current_lr
@@ -144,7 +148,7 @@ def main():
             val_acc_top1, val_acc_top5, batch_time, data_time = trainer.infer(model, epoch)
         if val_acc_top1 > best_epoch[1]:
             best_epoch = [epoch, val_acc_top1, val_acc_top5]
-            if epoch >= 0:    # 120
+            if epoch >= 0:  # 120
                 utils.save_checkpoint({
                     'epoch': epoch + 1,
                     'state_dict': model.module.state_dict(),
@@ -152,12 +156,17 @@ def main():
                     'optimizer': optimizer.state_dict(),
                 }, save_path=args.save, epoch=epoch, is_best=True)
                 if len(args.gpus) > 1:
-                  utils.save(model.module.state_dict(), os.path.join(args.save, 'weights_{}_{}.pt'.format(epoch, val_acc_top1)))
+                    utils.save(model.module.state_dict(),
+                               os.path.join(args.save, 'weights_{}_{}.pt'.format(epoch, val_acc_top1)))
                 else:
-                  utils.save(model.state_dict(), os.path.join(args.save, 'weights_{}_{}.pt'.format(epoch, val_acc_top1)))
+                    utils.save(model.state_dict(),
+                               os.path.join(args.save, 'weights_{}_{}.pt'.format(epoch, val_acc_top1)))
 
         logging.info('BEST EPOCH %d  val_top1 %.2f val_top5 %.2f', best_epoch[0], best_epoch[1], best_epoch[2])
-        logging.info('epoch: {} \t train_acc_top1: {:.4f} \t train_loss: {:.4f} \t val_acc_top1: {:.4f}'.format(epoch, train_acc_top1, train_obj, val_acc_top1))
+        logging.info('epoch: {} \t train_acc_top1: {:.4f} \t train_loss: {:.4f} \t val_acc_top1: {:.4f}'.format(epoch,
+                                                                                                                train_acc_top1,
+                                                                                                                train_obj,
+                                                                                                                val_acc_top1))
 
     logging.info("Params = %.2fMB" % params)
     logging.info("Mult-Adds = %.2fMB" % mult_adds)
