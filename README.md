@@ -18,7 +18,7 @@ It is able to efficiently design high-performance convolutional architectures fo
 The architecture directly searched on CIFAR-10 can transfer into other intra- and inter-tasks, such as CIFAR-100, ImageNet, and PASCAL VOC 2007 et al.
 The search process only requires a single GPU (1080 Ti) for nine hours.
 
-**This code is based on the implementation of  [DARTS](https://github.com/quark0/darts).**
+**This code is based on the implementation of  [DARTS](https://github.com/quark0/darts) and [DenseNAS](https://github.com/JaminFong/DenseNAS.git).**
 
 
 ## Pretrained models
@@ -65,7 +65,7 @@ Customized architectures are supported through the `--arch` flag once specified 
 
 **ImageNet**
 
-Train the searched model over ImageNet dataset with the following script.<br>
+Training the searched model over ImageNet dataset with the following script.<br>
 ```
 python train_imagenet.py --data_path 'The path of ImageNet lmdb data' --init_channels 46 --layers 14 --arch PairNAS --gpus 0,1,2,3
 ```
