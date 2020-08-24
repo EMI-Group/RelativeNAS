@@ -1,5 +1,5 @@
 # Continuously Encoded Neural Architecture Search by Paired Learning
-Raw code accompanying the paper
+The implementation of the paper
 > [PairNAS: Continuously Encoded Neural Architecture Search by Paired Learning](https://arxiv.org/abs/1806.09055) \
 > Hao Tan, Ran Cheng, Shihua Huang, Cheng He, Changxiao Qiu, Fan Yang, Ping Luo.\
 > _arXiv:1806.09055_.
@@ -13,7 +13,7 @@ Raw code accompanying the paper
 Python >= 3.6, PyTorch >= 1.0, torchvision >= 0.2
 ```
 
-The algorithm is based on continuous encoding in the cell-based search space. 
+The algorithm is based on continuous encoding in cell-based search space. 
 It is able to efficiently design high-performance convolutional architectures for image classification.
 The architecture directly searched on CIFAR-10 can transfer into other intra- and inter-tasks, such as CIFAR-100, ImageNet, and PASCAL VOC 2007 et al.
 The search process only requires a single GPU (1080 Ti) for nine hours.
