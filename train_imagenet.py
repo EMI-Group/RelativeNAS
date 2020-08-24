@@ -1,62 +1,67 @@
 import os
 import sys
-import numpy as np
 import time
+import glob
+import numpy as np
 import torch
 import utils
-import glob
-import random
 import logging
 import argparse
 import torch.nn as nn
-import genotypes
 import torch.utils
 import torchvision.datasets as dset
-import torchvision.transforms as transforms
 import torch.backends.cudnn as cudnn
 
+from dataset import imagenet_data
 from torch.autograd import Variable
-from model import NetworkImageNet as Network
+import genotypes
 
-parser = argparse.ArgumentParser("imagenet")
-parser.add_argument('--data', type=str, default='../data/imagenet/', help='location of the data corpus')
-parser.add_argument('--batch_size', type=int, default=128, help='batch size')
-parser.add_argument('--learning_rate', type=float, default=0.1, help='init learning rate')
-parser.add_argument('--momentum', type=float, default=0.9, help='momentum')
-parser.add_argument('--weight_decay', type=float, default=3e-5, help='weight decay')
-parser.add_argument('--report_freq', type=float, default=100, help='report frequency')
-parser.add_argument('--gpu', type=int, default=0, help='gpu device id')
-parser.add_argument('--epochs', type=int, default=250, help='num of training epochs')
-parser.add_argument('--init_channels', type=int, default=48, help='num of init channels')
-parser.add_argument('--layers', type=int, default=14, help='total number of layers')
-parser.add_argument('--auxiliary', action='store_true', default=False, help='use auxiliary tower')
-parser.add_argument('--auxiliary_weight', type=float, default=0.4, help='weight for auxiliary loss')
-parser.add_argument('--drop_path_prob', type=float, default=0, help='drop path probability')
-parser.add_argument('--save', type=str, default='EXP', help='experiment name')
-parser.add_argument('--seed', type=int, default=0, help='random seed')
+from tools.lr_scheduler import get_lr_scheduler
+from run_apis.trainer import Trainer
+from tools.utils import cross_entropy_with_label_smoothing
+from model import NetworkImageNet as Network
+from configs.imagenet_train_cfg import cfg as config
+from tools.utils import count_parameters_in_MB
+from tools.multadds_count import comp_multadds
+
+parser = argparse.ArgumentParser("cifar")
+parser.add_argument('--gpus', type=str, default='0,1,2,3,4,5,6,7')     # '11,12,13,14'
 parser.add_argument('--arch', type=str, default='PairNAS', help='which architecture to use')
-parser.add_argument('--grad_clip', type=float, default=5., help='gradient clipping')
-parser.add_argument('--label_smooth', type=float, default=0.1, help='label smoothing')
-parser.add_argument('--gamma', type=float, default=0.97, help='learning rate decay')
-parser.add_argument('--decay_period', type=int, default=1, help='epochs between two learning rate decays')
-parser.add_argument('--parallel', action='store_true', default=False, help='data parallelism')
+parser.add_argument('--report_freq', type=float, default=50, help='report frequency')
+parser.add_argument('--data_path', type=str, default='/raid/huangsh/imagenet/ILSVRC2012/lmdb')
+# model setting
+parser.add_argument('--init_channels', type=int, default=46, help='num of init channels')
+parser.add_argument('--layers', type=int, default=14, help='total number of layers')
+parser.add_argument('--drop_path_prob', type=float, default=0, help='drop path probability')
+parser.add_argument('--cutout', action='store_true', default=False, help='use cutout')
+parser.add_argument('--cutout_length', type=int, default=16, help='cutout length')
+parser.add_argument('--seed', type=int, default=0, help='random seed')
 args = parser.parse_args()
 
-args.save = 'eval-{}-{}'.format(args.save, time.strftime("%Y%m%d-%H%M%S"))
-utils.create_exp_dir(args.save, scripts_to_save=glob.glob('*.py'))
+os.environ['CUDA_VISIBLE_DEVICES'] = '{}'.format(args.gpus)
+args.save = '../exp_dirs/eval-imagenet-arch{}-l{}-c{}-lr{}'.format(args.arch, args.layers, args.init_channels, config.optim.init_lr)
+utils.create_exp_dir(args.save, scripts_path='./')
 
 log_format = '%(asctime)s %(message)s'
-logging.basicConfig(stream=sys.stdout, level=logging.INFO,
-                    format=log_format, datefmt='%m/%d %I:%M:%S %p')
+logging.basicConfig(stream=sys.stdout, level=logging.INFO, format=log_format, datefmt='%m/%d %I:%M:%S %p')
 fh = logging.FileHandler(os.path.join(args.save, 'log.txt'))
 fh.setFormatter(logging.Formatter(log_format))
 logging.getLogger().addHandler(fh)
+NUM_CLASSES = 1000
 
-CLASSES = 1000
+
+def adjust_lr(optimizer, epochs, learning_rate, epoch):
+    # Smaller slope for the last 5 epochs because lr * 1/250 is relatively large
+    if epochs - epoch > 5:
+        lr = learning_rate * (epochs - 5 - epoch) / (epochs - 5)
+    else:
+        lr = learning_rate * (epochs - epoch) / ((epochs - 5) * 5)
+    for param_group in optimizer.param_groups:
+        param_group['lr'] = lr
+    return optimizer, lr
 
 
 class CrossEntropyLabelSmooth(nn.Module):
-
     def __init__(self, num_classes, epsilon):
         super(CrossEntropyLabelSmooth, self).__init__()
         self.num_classes = num_classes
@@ -72,155 +77,90 @@ class CrossEntropyLabelSmooth(nn.Module):
 
 
 def main():
-    if not torch.cuda.is_available():
-        logging.info('no gpu device available')
-        sys.exit(1)
-
     np.random.seed(args.seed)
-    torch.cuda.set_device(args.gpu)
     cudnn.benchmark = True
     torch.manual_seed(args.seed)
     cudnn.enabled = True
     torch.cuda.manual_seed(args.seed)
-    logging.info('gpu device = %d' % args.gpu)
     logging.info("args = %s", args)
 
     genotype = eval("genotypes.%s" % args.arch)
-    model = Network(args.init_channels, CLASSES, args.layers, args.auxiliary, genotype)
-    if args.parallel:
-        model = nn.DataParallel(model).cuda()
-    else:
-        model = model.cuda()
+    model = Network(args.init_channels, NUM_CLASSES, args.layers, config.optim.auxiliary, genotype)
 
-    logging.info("param size = %fMB", utils.count_parameters_in_MB(model))
-
-    criterion = nn.CrossEntropyLoss()
-    criterion = criterion.cuda()
-    criterion_smooth = CrossEntropyLabelSmooth(CLASSES, args.label_smooth)
-    criterion_smooth = criterion_smooth.cuda()
-
-    optimizer = torch.optim.SGD(
-        model.parameters(),
-        args.learning_rate,
-        momentum=args.momentum,
-        weight_decay=args.weight_decay
-    )
-
-    traindir = os.path.join(args.data, 'train')
-    validdir = os.path.join(args.data, 'val')
-    normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-    train_data = dset.ImageFolder(
-        traindir,
-        transforms.Compose([
-            transforms.RandomResizedCrop(224),
-            transforms.RandomHorizontalFlip(),
-            transforms.ColorJitter(
-                brightness=0.4,
-                contrast=0.4,
-                saturation=0.4,
-                hue=0.2),
-            transforms.ToTensor(),
-            normalize,
-        ]))
-    valid_data = dset.ImageFolder(
-        validdir,
-        transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            normalize,
-        ]))
-
-    train_queue = torch.utils.data.DataLoader(
-        train_data, batch_size=args.batch_size, shuffle=True, pin_memory=True, num_workers=4)
-
-    valid_queue = torch.utils.data.DataLoader(
-        valid_data, batch_size=args.batch_size, shuffle=False, pin_memory=True, num_workers=4)
-
-    scheduler = torch.optim.lr_scheduler.StepLR(optimizer, args.decay_period, gamma=args.gamma)
-
-    best_acc_top1 = 0
-    for epoch in range(args.epochs):
-        scheduler.step()
-        logging.info('epoch %d lr %e', epoch, scheduler.get_lr()[0])
-        model.drop_path_prob = args.drop_path_prob * epoch / args.epochs
-
-        train_acc, train_obj = train(train_queue, model, criterion_smooth, optimizer)
-        logging.info('train_acc %f', train_acc)
-
-        valid_acc_top1, valid_acc_top5, valid_obj = infer(valid_queue, model, criterion)
-        logging.info('valid_acc_top1 %f', valid_acc_top1)
-        logging.info('valid_acc_top5 %f', valid_acc_top5)
-
-        is_best = False
-        if valid_acc_top1 > best_acc_top1:
-            best_acc_top1 = valid_acc_top1
-            is_best = True
-
-        utils.save_checkpoint({
-            'epoch': epoch + 1,
-            'state_dict': model.state_dict(),
-            'best_acc_top1': best_acc_top1,
-            'optimizer': optimizer.state_dict(),
-        }, is_best, args.save)
-
-
-def train(train_queue, model, criterion, optimizer):
-    objs = utils.AvgrageMeter()
-    top1 = utils.AvgrageMeter()
-    top5 = utils.AvgrageMeter()
-    model.train()
-
-    for step, (input, target) in enumerate(train_queue):
-        input = input.cuda(non_blocking=True)
-        target = target.cuda(non_blocking=True)
-
-        optimizer.zero_grad()
-        logits, logits_aux = model(input)
-        loss = criterion(logits, target)
-        if args.auxiliary:
-            loss_aux = criterion(logits_aux, target)
-            loss += args.auxiliary_weight * loss_aux
-
-        loss.backward()
-        nn.utils.clip_grad_norm(model.parameters(), args.grad_clip)
-        optimizer.step()
-
-        prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-        n = input.size(0)
-        objs.update(loss.data[0], n)
-        top1.update(prec1.data[0], n)
-        top5.update(prec5.data[0], n)
-
-        if step % args.report_freq == 0:
-            logging.info('train %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
-
-    return top1.avg, objs.avg
-
-
-def infer(valid_queue, model, criterion):
-    objs = utils.AvgrageMeter()
-    top1 = utils.AvgrageMeter()
-    top5 = utils.AvgrageMeter()
+    start_epoch = 0
     model.eval()
+    model.drop_path_prob = args.drop_path_prob * 0
+    # compute the params as well as the multi-adds
+    params = count_parameters_in_MB(model)
+    logging.info("Params = %.2fMB" % params)
+    mult_adds = comp_multadds(model, input_size=config.data.input_size)
+    logging.info("Mult-Adds = %.2fMB" % mult_adds)
 
-    for step, (input, target) in enumerate(valid_queue):
-        input = input.cuda(non_blocking=True)
-        target = target.cuda(non_blocking=True)
+    model.train()
+    if len(args.gpus) > 1:
+        model = nn.DataParallel(model)
+    model = model.cuda()
+    if config.optim.label_smooth:
+        criterion = CrossEntropyLabelSmooth(NUM_CLASSES, config.optim.smooth_alpha)
+    else:
+        criterion = nn.CrossEntropyLoss()
+    criterion = criterion.cuda()
 
-        logits, _ = model(input)
-        loss = criterion(logits, target)
+    optimizer = torch.optim.SGD(model.parameters(), config.optim.init_lr, momentum=config.optim.momentum, weight_decay=config.optim.weight_decay)
 
-        prec1, prec5 = utils.accuracy(logits, target, topk=(1, 5))
-        n = input.size(0)
-        objs.update(loss.data[0], n)
-        top1.update(prec1.data[0], n)
-        top5.update(prec5.data[0], n)
+    imagenet = imagenet_data.ImageNet12(trainFolder=os.path.join(args.data_path, 'train'), testFolder=os.path.join(args.data_path, 'val'),
+                                        num_workers=config.data.num_workers, type_of_data_augmentation=config.data.type_of_data_aug, data_config=config.data,
+                                        size_images=config.data.input_size[1], scaled_size=config.data.scaled_size[1])
+    train_queue, valid_queue = imagenet.getTrainTestLoader(config.data.batch_size)
 
-        if step % args.report_freq == 0:
-            logging.info('valid %03d %e %f %f', step, objs.avg, top1.avg, top5.avg)
+    if config.optim.lr_schedule == 'cosine':
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(optimizer, float(config.train_params.epochs))
 
-    return top1.avg, top5.avg, objs.avg
+    trainer = Trainer(train_queue, valid_queue, criterion, config, args.report_freq)
+    best_epoch = [0, 0, 0]  # [epoch, acc_top1, acc_top5]
+    lr = config.optim.init_lr
+    for epoch in range(start_epoch, config.train_params.epochs):
+        if config.optim.lr_schedule == 'cosine':
+            scheduler.step()
+            current_lr = scheduler.get_lr()[0]
+        elif config.optim.lr_schedule == 'linear':       # with warmup initial
+            optimizer, current_lr = adjust_lr(optimizer, config.train_params.epochs, lr, epoch)
+        else:
+            print('Wrong lr type, exit')
+            sys.exit(1)
+        if epoch < 5:     # Warmup epochs for 5
+            current_lr = lr * (epoch + 1) / 5.0
+            for param_group in optimizer.param_groups:
+                param_group['lr'] = current_lr
+            logging.info('Warming-up Epoch: %d, LR: %e', epoch, lr * (epoch + 1) / 5.0)
+
+        logging.info('Epoch: %d lr %e', epoch, current_lr)
+        if len(args.gpus) > 1:
+            model.module.drop_path_prob = args.drop_path_prob * epoch / config.train_params.epochs
+        else:
+            model.drop_path_prob = args.drop_path_prob * epoch / config.train_params.epochs
+        train_acc_top1, train_acc_top5, train_obj, batch_time, data_time = trainer.train(model, optimizer, epoch)
+        with torch.no_grad():
+            val_acc_top1, val_acc_top5, batch_time, data_time = trainer.infer(model, epoch)
+        if val_acc_top1 > best_epoch[1]:
+            best_epoch = [epoch, val_acc_top1, val_acc_top5]
+            if epoch >= 0:    # 120
+                utils.save_checkpoint({
+                    'epoch': epoch + 1,
+                    'state_dict': model.module.state_dict(),
+                    'best_acc_top1': val_acc_top1,
+                    'optimizer': optimizer.state_dict(),
+                }, save_path=args.save, epoch=epoch, is_best=True)
+                if len(args.gpus) > 1:
+                  utils.save(model.module.state_dict(), os.path.join(args.save, 'weights_{}_{}.pt'.format(epoch, val_acc_top1)))
+                else:
+                  utils.save(model.state_dict(), os.path.join(args.save, 'weights_{}_{}.pt'.format(epoch, val_acc_top1)))
+
+        logging.info('BEST EPOCH %d  val_top1 %.2f val_top5 %.2f', best_epoch[0], best_epoch[1], best_epoch[2])
+        logging.info('epoch: {} \t train_acc_top1: {:.4f} \t train_loss: {:.4f} \t val_acc_top1: {:.4f}'.format(epoch, train_acc_top1, train_obj, val_acc_top1))
+
+    logging.info("Params = %.2fMB" % params)
+    logging.info("Mult-Adds = %.2fMB" % mult_adds)
 
 
 if __name__ == '__main__':
