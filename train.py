@@ -22,7 +22,7 @@ parser.add_argument('--epochs', type=int, default=600, help='num of training epo
 parser.add_argument('--auxiliary', action='store_true', default=True, help='use auxiliary tower')
 parser.add_argument('--cutout', action='store_true', default=True, help='use cutout')
 parser.add_argument('--batch_size', type=int, default=128, help='batch size')
-parser.add_argument('--arch', type=str, default='PairNAS', help='which architecture to use')
+parser.add_argument('--arch', type=str, default='RelativeNAS', help='which architecture to use')
 parser.add_argument('--set', type=str, default="cifar10", help='data set')
 parser.add_argument('--drop_path_prob', type=float, default=0.3, help='drop path probability')
 
