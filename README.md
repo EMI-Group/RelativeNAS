@@ -1,6 +1,6 @@
-# Continuously Encoded Neural Architecture Search by Paired Learning
+# Relative Neural Architecture Search via Slow-Fast Learning
 The implementation of the paper
-> [PairNAS: Continuously Encoded Neural Architecture Search by Paired Learning](https://arxiv.org/abs/1806.09055) \
+> [RelativeNAS: Relative Neural Architecture Search via Slow-Fast Learning](https://arxiv.org/abs/1806.09055) \
 > Hao Tan, Ran Cheng, Shihua Huang, Cheng He, Changxiao Qiu, Fan Yang, Ping Luo.\
 > _arXiv:1806.09055_.
 
@@ -13,7 +13,7 @@ The implementation of the paper
 Python >= 3.6, PyTorch >= 1.0, torchvision >= 0.2
 ```
 
-**PairNAS** is based on continuous encoding in cell-based search space. 
+**RelativeNAS** is based on continuous encoding in cell-based search space. 
 Besides, it uses a paired learning paradigm to iteratively update the architecture vectors in the population.
 A weight set is also contained to reduce the cost for performance estimations of candidate architectures.
 Therefore, it can efficiently design high-performance convolutional architectures for image classification.
@@ -52,7 +52,7 @@ Our pretrained models are provided for evaluation.
 
 2. 
 ```
- python test_imagenet.py --auxiliary --model_path ./trained_model/imagenet_model.pt --arch PairNAS --gpus 0,1 --data_path 'the path of your image data (lmdb)'
+ python test_imagenet.py --auxiliary --model_path ./trained_model/imagenet_model.pt --arch RelativeNAS --gpus 0,1 --data_path 'the path of your image data (lmdb)'
 ```
 * Expected result: 24.88% top-1 error and 7.7% top-5 with 5.05M model params.
 
@@ -69,7 +69,7 @@ Customized architectures are supported through the `--arch` flag once specified 
 
 Training the searched model over ImageNet dataset with the following script.<br>
 ```
-python train_imagenet.py --data_path 'The path of ImageNet lmdb data' --init_channels 46 --layers 14 --arch PairNAS --gpus 0,1,2,3
+python train_imagenet.py --data_path 'The path of ImageNet lmdb data' --init_channels 46 --layers 14 --arch RelativeNAS --gpus 0,1,2,3
 ```
 
 
