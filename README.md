@@ -30,7 +30,7 @@ Our pretrained models are provided for evaluation.
 ```
  python test.py --auxiliary --model_path ./trained_model/cifar10_model.pt --set cifar10
 ```
-* Expected result: 2.38% test error rate with 3.93M model params.
+* Expected result: 2.26% test error rate with 3.93M model params.
 
 **CIFAR-100** ([cifar100_model.pt](./trained_model/cifar100_model.pt))
 ```
