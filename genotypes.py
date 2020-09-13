@@ -85,7 +85,7 @@ DARTS_V2 = Genotype(
 
 DARTS = DARTS_V2
 
-PairNAS = Genotype(normal=[('sep_conv_3x3', 0), ('dil_conv_5x5', 1), ('sep_conv_3x3', 1), ('sep_conv_3x3', 1), ('sep_conv_3x3', 1),
+RelativeNAS = Genotype(normal=[('sep_conv_3x3', 0), ('dil_conv_5x5', 1), ('sep_conv_3x3', 1), ('sep_conv_3x3', 1), ('sep_conv_3x3', 1),
                            ('sep_conv_5x5', 1), ('skip_connect', 0), ('sep_conv_3x3', 0)], normal_concat=range(2, 6),
                    reduce=[('avg_pool_3x3', 1), ('max_pool_3x3', 1), ('dil_conv_5x5', 1), ('max_pool_3x3', 1), ('avg_pool_3x3', 3),
                            ('skip_connect', 1), ('dil_conv_5x5', 3), ('sep_conv_3x3', 1)], reduce_concat=range(2, 6))
