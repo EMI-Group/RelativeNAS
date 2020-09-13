@@ -5,7 +5,7 @@ The implementation of the paper
 > _arXiv:1806.09055_.
 
 <p align="center">
-  <img src="./img/paired_learning.png" alt="paired_learning" width="95%">
+  <img src="./img/slow_fast_learning.png" alt="slow_fast_learning" width="95%">
 </p>
 
 ## Requirements
