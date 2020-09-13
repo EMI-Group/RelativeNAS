@@ -21,7 +21,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser("Params")
     parser.add_argument('--report_freq', type=float, default=50, help='report frequency')
-    parser.add_argument('--arch', type=str, default='PairNAS', help='which architecture to use')
+    parser.add_argument('--arch', type=str, default='RelativeNAS', help='which architecture to use')
     parser.add_argument('--data_path', type=str, default='/raid/huangsh/imagenet/ILSVRC2012/lmdb/',
                         help='location of the dataset')
     parser.add_argument('--gpus', type=str, default='14,15', help='gpu device id')
