@@ -26,7 +26,7 @@ from tools.multadds_count import comp_multadds
 
 parser = argparse.ArgumentParser("cifar")
 parser.add_argument('--gpus', type=str, default='0,1,2,3,4,5,6,7')  # '11,12,13,14'
-parser.add_argument('--arch', type=str, default='PairNAS', help='which architecture to use')
+parser.add_argument('--arch', type=str, default='RelativeNAS', help='which architecture to use')
 parser.add_argument('--report_freq', type=float, default=50, help='report frequency')
 parser.add_argument('--data_path', type=str, default='/raid/huangsh/imagenet/ILSVRC2012/lmdb')
 # model setting
