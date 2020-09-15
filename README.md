@@ -1,6 +1,6 @@
 # Relative Neural Architecture Search via Slow-Fast Learning
 The implementation of the paper
-> [RelativeNAS: Relative Neural Architecture Search via Slow-Fast Learning](https://arxiv.org/abs/1806.09055) \
+> [RelativeNAS: Relative Neural Architecture Search via Slow-Fast Learning](https://arxiv.org/abs/2009.06193) \
 > Hao Tan, Ran Cheng, Shihua Huang, Cheng He, Changxiao Qiu, Fan Yang, Ping Luo.\
 > _arXiv:2009.06193_.
 
