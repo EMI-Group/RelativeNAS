@@ -74,7 +74,7 @@ python train_imagenet.py --data_path 'The path of ImageNet lmdb data' --init_cha
 
 
 ## Citation
-If you use our code in your research, please cite our [paper](https://arxiv.org/abs/1806.09055):
+If you use our code in your research, please cite our [paper](https://arxiv.org/abs/2009.06193):
 ```
 @article{tan2020relative,
   title={RelativeNAS: Relative Neural Architecture Search via Slow-Fast Learning},
