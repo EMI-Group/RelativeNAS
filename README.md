@@ -2,7 +2,7 @@
 The implementation of the paper
 > [RelativeNAS: Relative Neural Architecture Search via Slow-Fast Learning](https://arxiv.org/abs/1806.09055) \
 > Hao Tan, Ran Cheng, Shihua Huang, Cheng He, Changxiao Qiu, Fan Yang, Ping Luo.\
-> _arXiv:1806.09055_.
+> _arXiv:2009.06193_.
 
 <p align="center">
   <img src="./img/slow_fast_learning.png" alt="slow_fast_learning" width="95%">
@@ -76,10 +76,10 @@ python train_imagenet.py --data_path 'The path of ImageNet lmdb data' --init_cha
 ## Citation
 If you use our code in your research, please cite our [paper](https://arxiv.org/abs/1806.09055):
 ```
-@article{liu2018darts,
-  title={DARTS: Differentiable Architecture Search},
-  author={Liu, Hanxiao and Simonyan, Karen and Yang, Yiming},
-  journal={arXiv preprint arXiv:1806.09055},
-  year={2018}
+@article{tan2020relative,
+  title={RelativeNAS: Relative Neural Architecture Search via Slow-Fast Learning},
+  author={Tan, Hao and Cheng, Ran and Huang, Shihua and He, Cheng and Qiu, Changxiao and Yang, Fan and Luo, Ping},
+  journal={arXiv preprint arXiv:2009.06193},
+  year={2020}
 }
 ```
