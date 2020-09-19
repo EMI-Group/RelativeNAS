@@ -73,7 +73,8 @@ python train_imagenet.py --data_path 'The path of ImageNet lmdb data' --init_cha
 ```
 
 **TransferLearning Tasks**
-Please refer to the [TrasferLearning-Tasks] (https://github.com/EMI-Group/TransferLearning-Tasks) for the trasfer learning tasks in our RelativeNAS.  
+
+Please refer to the [TrasferLearning-Tasks](https://github.com/EMI-Group/TransferLearning-Tasks) for the trasfer learning tasks in our RelativeNAS.  
 
 
 ## Citation
