@@ -72,6 +72,9 @@ Training the searched model over ImageNet dataset with the following script.<br>
 python train_imagenet.py --data_path 'The path of ImageNet lmdb data' --init_channels 46 --layers 14 --arch RelativeNAS --gpus 0,1,2,3
 ```
 
+**TransferLearning Tasks**
+Please refer to the [TrasferLearning-Tasks] (https://github.com/EMI-Group/TransferLearning-Tasks) for the trasfer learning tasks in our RelativeNAS.  
+
 
 ## Citation
 If you use our code in your research, please cite our [paper](https://arxiv.org/abs/2009.06193):
