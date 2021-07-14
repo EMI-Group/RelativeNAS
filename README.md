@@ -10,7 +10,7 @@ The implementation of the paper
 
 ## Requirements
 ```
-Python >= 3.6, PyTorch >= 1.0, torchvision >= 0.2
+Python >= 3.6, PyTorch == 1.3.0, torchvision >= 0.2
 ```
 
 **RelativeNAS** is based on continuous encoding in cell-based search space. 
@@ -56,7 +56,18 @@ Our pretrained models are provided for evaluation.
 ```
 * Expected result: 24.88% top-1 error and 7.7% top-5 with 5.05M model params.
 
+## Architecture search (using small proxy models)
+To carry out architecture search on CIFAR-10, run
+```
+python train_search.py     # for conv cells on CIFAR-10
+```
 
+In detail, ```model_search.py``` is used to define the model. 
+It uses ```nn.ModuleList()``` to contain all the possible operations and only initial its own operations.
+```arch_info``` attribute is used to specify what operations the model has.
+
+```slow_fast_learning.py``` defines all the tools for the slow-fast learning, such as population initialization, architecture decoding, et. al.
+The rule to update the weight set is also defined.
 
 ## Architecture evaluation (using full-sized models)
 To evaluate our architecture by training from scratch, run
